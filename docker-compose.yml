@@ -9,8 +9,12 @@ services:
       - /app/node_modules
     environment:
       - PORT=8000
+      - DATABASE_URL=postgres://user:password@db:5432/youevent
     networks:
       - app-network
+    depends_on:
+      - db
+    command: npm run start:dev
 
   frontend:
     build: ./frontend
@@ -21,7 +25,33 @@ services:
       - /app/node_modules
     networks:
       - app-network
+    command: npm run dev
+
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: youevent
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8888:8080"
+    networks:
+      - app-network
 
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  db-data:
