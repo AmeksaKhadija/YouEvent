@@ -35,9 +35,10 @@ export class EventsService {
   async update(id: number, updateEventDto: UpdateEventDto): Promise<Event> {
     const event = await this.findOne(id);
 
-    if (event.status === EventStatus.PUBLISHED) {
-      throw new BadRequestException('Cannot modify a published event');
-    }
+    // Removed check for PUBLISHED status to allow modification
+    // if (event.status === EventStatus.PUBLISHED) {
+    //   throw new BadRequestException('Cannot modify a published event');
+    // }
 
     this.eventsRepository.merge(event, updateEventDto);
     return this.eventsRepository.save(event);
