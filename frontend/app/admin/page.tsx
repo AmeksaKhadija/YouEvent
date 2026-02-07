@@ -329,7 +329,18 @@ export default function AdminDashboard() {
                                                                     </button>
                                                                 )}
 
-                                                                {/* Edit option */}
+                                                                 {/* Restore (Publish again) option for Canceled events */}
+                                                                 {event.status === 'CANCELED' && (
+                                                                    <button
+                                                                        onClick={() => { publishEvent(event.id); toggleDropdown(event.id); }}
+                                                                        className="block w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-100"
+                                                                        role="menuitem"
+                                                                    >
+                                                                        Restaurer
+                                                                    </button>
+                                                                )}
+
+                                                                {/* Edit option - Disabled for PUBLISHED events */}
                                                                 {event.status === 'PUBLISHED' ? (
                                                                      <span className="block w-full text-left px-4 py-2 text-sm text-gray-400 cursor-not-allowed">
                                                                         Modifier
