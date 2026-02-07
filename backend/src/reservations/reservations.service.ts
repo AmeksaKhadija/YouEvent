@@ -68,4 +68,20 @@ export class ReservationsService {
       order: { created_at: 'DESC' },
     });
   }
+
+  async findAll(): Promise<Reservation[]> {
+    return this.reservationsRepository.find({
+      relations: ['event', 'user'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  async updateStatus(id: number, status: ReservationStatus): Promise<Reservation> {
+    const reservation = await this.reservationsRepository.findOne({ where: { id } });
+    if (!reservation) {
+      throw new NotFoundException(`Reservation with ID ${id} not found`);
+    }
+    reservation.status = status;
+    return this.reservationsRepository.save(reservation);
+  }
 }

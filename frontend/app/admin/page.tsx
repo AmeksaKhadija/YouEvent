@@ -15,6 +15,35 @@ export default function AdminDashboard() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') || 'dashboard';
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [reservations, setReservations] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (activeTab === 'reservations' && authorized) {
+        fetchReservations();
+    }
+  }, [activeTab, authorized]);
+
+  const fetchReservations = async () => {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get('http://localhost:8000/reservations', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        setReservations(res.data);
+    } catch (err) { console.error(err); }
+  };
+
+  const updateReservationStatus = async (id: number, status: string) => {
+    if(!confirm(`Changer le statut en ${status} ?`)) return;
+    try {
+        const token = localStorage.getItem('token');
+        await axios.patch(`http://localhost:8000/reservations/${id}/status`, 
+            { status },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        fetchReservations();
+    } catch (err) { alert('Erreur lors de la mise à jour'); }
+  };
 
   const [user, setUser] = useState<any>(null);
   
@@ -168,6 +197,15 @@ export default function AdminDashboard() {
           >
             <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             Événements
+          </button>
+
+          {/* Réservations */}
+          <button 
+            onClick={() => setActiveTab('reservations')}
+            className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'reservations' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}
+          >
+             <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+             Réservations
           </button>
 
           {/* Profil */}
@@ -385,6 +423,61 @@ export default function AdminDashboard() {
                             </table>
                         )}
                     </div>
+                </div>
+            )}
+
+            {/* VIEW: RESERVATIONS */}
+            {activeTab === 'reservations' && (
+                <div>
+                     <h2 className="text-3xl font-bold text-gray-800 mb-8">Gestion des Réservations</h2>
+                     
+                     <div className="bg-white shadow-md rounded-lg overflow-hidden">
+                        <table className="min-w-full divide-y divide-gray-200">
+                             <thead className="bg-gray-50">
+                                 <tr>
+                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Événement</th>
+                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
+                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                 </tr>
+                             </thead>
+                             <tbody className="bg-white divide-y divide-gray-200">
+                                 {reservations.map((res) => (
+                                     <tr key={res.id}>
+                                         <td className="px-6 py-4 whitespace-nowrap">
+                                             <div className="text-sm font-medium text-gray-900">{res.event?.title}</div>
+                                             <div className="text-sm text-gray-500">ID: {res.event?.id}</div>
+                                         </td>
+                                         <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm text-gray-900">{res.user?.name}</div>
+                                            <div className="text-sm text-gray-500">{res.user?.email}</div>
+                                         </td>
+                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                             {new Date(res.created_at).toLocaleDateString()}
+                                         </td>
+                                         <td className="px-6 py-4 whitespace-nowrap">
+                                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                ${res.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' : 
+                                                  res.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 
+                                                  'bg-red-100 text-red-800'}`}>
+                                                 {res.status}
+                                             </span>
+                                         </td>
+                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                             {res.status === 'PENDING' && (
+                                                <>
+                                                    <button onClick={() => updateReservationStatus(res.id, 'CONFIRMED')} className="text-green-600 hover:text-green-900 mr-4 font-bold">Confirmer</button>
+                                                    <button onClick={() => updateReservationStatus(res.id, 'REJECTED')} className="text-red-600 hover:text-red-900 font-bold">Refuser</button>
+                                                </>
+                                             )}
+                                         </td>
+                                     </tr>
+                                 ))}
+                             </tbody>
+                        </table>
+                        {reservations.length === 0 && <div className="p-4 text-center text-gray-500">Aucune réservation pour le moment.</div>}
+                     </div>
                 </div>
             )}
 
