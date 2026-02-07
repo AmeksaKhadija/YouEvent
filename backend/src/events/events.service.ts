@@ -54,6 +54,12 @@ export class EventsService {
     return this.eventsRepository.save(event);
   }
 
+  async cancel(id: number): Promise<Event> {
+    const event = await this.findOne(id);
+    event.status = EventStatus.CANCELED;
+    return this.eventsRepository.save(event);
+  }
+
   async findPublished(): Promise<Event[]> {
     return this.eventsRepository.find({
       where: { status: EventStatus.PUBLISHED },
