@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
+import Link from 'next/link';
+
 export default function Home() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,9 +45,9 @@ export default function Home() {
                 <div className="text-sm text-gray-500 mb-2 truncate">{event.description}</div>
                 <p className="text-gray-600 mb-1"><span className="font-bold">Date:</span> {new Date(event.date).toLocaleDateString()}</p>
                 <p className="text-gray-600 mb-4"><span className="font-bold">Lieu:</span> {event.location}</p>
-                <button className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-300">
+                <Link href={`/events/${event.id}`} className="block w-full text-center bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-300">
                     Voir détails
-                </button>
+                </Link>
                 </div>
             </div>
             ))}
