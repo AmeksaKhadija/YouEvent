@@ -1,7 +1,7 @@
 import { Controller, Post, Body, UseGuards, Request, Get } from '@nestjs/common';
 import { ReservationsService } from './reservations.service';
-import { AuthGuard } from '@nestjs/passport'; // Assumed from context
-import { CreateReservationDto } from './dto/create-reservation.dto'; // Need to create this
+import { AuthGuard } from '@nestjs/passport';
+import { CreateReservationDto } from './dto/create-reservation.dto';
 
 @Controller('reservations')
 export class ReservationsController {
@@ -9,9 +9,8 @@ export class ReservationsController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  create(@Request() req, @Body() body: { eventId: number }) {
-    // req.user is populated by AuthGuard (Passport)
-    return this.reservationsService.create(req.user.userId, body.eventId);
+  create(@Request() req, @Body() createReservationDto: CreateReservationDto) {
+    return this.reservationsService.create(req.user.userId, createReservationDto.eventId);
   }
 
   @Get('my-reservations')
