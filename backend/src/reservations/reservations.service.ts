@@ -84,4 +84,22 @@ export class ReservationsService {
     reservation.status = status;
     return this.reservationsRepository.save(reservation);
   }
+
+  async cancelMyReservation(userId: number, reservationId: number): Promise<void> {
+    const reservation = await this.reservationsRepository.findOne({ 
+        where: { id: reservationId, user_id: userId } 
+    });
+
+    if (!reservation) {
+        throw new NotFoundException('Reservation not found');
+    }
+
+    if (reservation.status === ReservationStatus.CANCELED) {
+        throw new BadRequestException('Reservation is already canceled');
+    }
+
+    // YOUEV-61: Autoriser l'annulation si PENDING ou CONFIRMED
+    reservation.status = ReservationStatus.CANCELED;
+    await this.reservationsRepository.save(reservation);
+  }
 }
