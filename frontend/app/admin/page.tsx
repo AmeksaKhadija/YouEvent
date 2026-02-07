@@ -254,12 +254,21 @@ export default function AdminDashboard() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button 
-                                                    onClick={() => router.push(`/admin/events/edit/${event.id}`)}
-                                                    className="text-indigo-600 hover:text-indigo-900 mr-4"
-                                                >
-                                                    Modifier
-                                                </button>
+                                                {event.status === 'PUBLISHED' ? (
+                                                    <span 
+                                                        className="text-gray-400 cursor-not-allowed mr-4" 
+                                                        title="Impossible de modifier un événement publié"
+                                                    >
+                                                        Modifier
+                                                    </span>
+                                                ) : (
+                                                    <button 
+                                                        onClick={() => router.push(`/admin/events/edit/${event.id}`)}
+                                                        className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                                    >
+                                                        Modifier
+                                                    </button>
+                                                )}
                                                 <button 
                                                     onClick={() => deleteEvent(event.id)}
                                                     className="text-red-600 hover:text-red-900"
