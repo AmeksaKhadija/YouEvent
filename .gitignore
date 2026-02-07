@@ -4,3 +4,6 @@ node_modules/
 coverage/
 dist/
 build/
+.next/
+frontend/.next/
+backend/dist/
