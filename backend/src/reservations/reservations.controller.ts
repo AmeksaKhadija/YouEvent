@@ -22,6 +22,12 @@ export class ReservationsController {
     return this.reservationsService.findByUser(req.user.userId);
   }
 
+  @Patch(':id/cancel')
+  @UseGuards(AuthGuard('jwt'))
+  async cancel(@Request() req, @Param('id') id: string) {
+    return this.reservationsService.cancelMyReservation(req.user.userId, +id);
+  }
+
   @Get()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('admin')
