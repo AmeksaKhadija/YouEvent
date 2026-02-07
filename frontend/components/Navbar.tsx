@@ -42,6 +42,9 @@ export default function Navbar() {
               {user && (
                  <Link href="/dashboard" className="py-4 px-2 text-gray-500 font-semibold hover:text-green-500 transition duration-300">Mon Espace</Link>
               )}
+              {user && user.role === 'admin' && (
+                 <Link href="/admin" className="py-4 px-2 text-red-500 font-semibold hover:text-red-700 transition duration-300">Admin</Link>
+              )}
             </div>
           </div>
           <div className="hidden md:flex items-center space-x-3 ">
