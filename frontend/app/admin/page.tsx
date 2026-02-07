@@ -87,6 +87,21 @@ export default function AdminDashboard() {
     }
   };
 
+  const publishEvent = async (id: number) => {
+    if (confirm('Voulez-vous vraiment publier cet événement ? Il sera visible par tous.')) {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.patch(`http://localhost:8000/events/${id}/publish`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setEvents(events.map(e => e.id === id ? { ...e, status: 'PUBLISHED' } : e));
+        } catch (err) {
+            console.error('Erreur publication', err);
+            alert('Erreur lors de la publication');
+        }
+    }
+  };
+
   if (loading) return <div className="flex h-screen items-center justify-center">Chargement...</div>;
   if (!authorized) return null;
 
@@ -254,6 +269,14 @@ export default function AdminDashboard() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                {event.status !== 'PUBLISHED' && (
+                                                    <button 
+                                                        onClick={() => publishEvent(event.id)}
+                                                        className="text-green-600 hover:text-green-900 mr-4"
+                                                    >
+                                                        Publier
+                                                    </button>
+                                                )}
                                                 {event.status === 'PUBLISHED' ? (
                                                     <span 
                                                         className="text-gray-400 cursor-not-allowed mr-4" 
