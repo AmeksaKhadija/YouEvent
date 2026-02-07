@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Put, Delete, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Put, Delete, Patch, Param, ParseIntPipe } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -22,6 +22,11 @@ export class EventsController {
     return this.eventsService.findAll();
   }
 
+  @Get('published')
+  findPublished() {
+    return this.eventsService.findPublished();
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.eventsService.findOne(id);
@@ -39,5 +44,12 @@ export class EventsController {
   @Roles('admin')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.eventsService.remove(id);
+  }
+
+  @Patch(':id/publish')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('admin')
+  publish(@Param('id', ParseIntPipe) id: number) {
+    return this.eventsService.publish(id);
   }
 }
