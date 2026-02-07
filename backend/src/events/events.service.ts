@@ -47,4 +47,17 @@ export class EventsService {
     const event = await this.findOne(id);
     await this.eventsRepository.remove(event);
   }
+
+  async publish(id: number): Promise<Event> {
+    const event = await this.findOne(id);
+    event.status = EventStatus.PUBLISHED;
+    return this.eventsRepository.save(event);
+  }
+
+  async findPublished(): Promise<Event[]> {
+    return this.eventsRepository.find({
+      where: { status: EventStatus.PUBLISHED },
+      order: { date: 'ASC' },
+    });
+  }
 }
