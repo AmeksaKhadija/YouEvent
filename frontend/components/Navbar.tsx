@@ -9,6 +9,11 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Hide Navbar on Admin Dashboard
+  if (pathname.startsWith('/admin')) {
+    return null;
+  }
+
   useEffect(() => {
     // Check if user is logged in
     const storedUser = localStorage.getItem('user');
