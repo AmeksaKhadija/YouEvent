@@ -1,4 +1,7 @@
-import { Controller, Post, Body, UseGuards, Get, Put, Delete, Patch, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Put, Delete, Patch, Param, ParseIntPipe, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -13,7 +16,22 @@ export class EventsController {
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('admin') // Seul l'admin peut créer un événement
-  create(@Body() createEventDto: CreateEventDto) {
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './public/uploads',
+      filename: (req, file, cb) => {
+        const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+        cb(null, `${randomName}${extname(file.originalname)}`);
+      }
+    })
+  }))
+  create(@Body() createEventDto: CreateEventDto, @UploadedFile() file: Express.Multer.File) {
+    if (file) {
+      createEventDto.imageUrl = `http://localhost:8000/uploads/${file.filename}`;
+    }
+    if (createEventDto.capacity && typeof createEventDto.capacity === 'string') {
+      createEventDto.capacity = parseInt(createEventDto.capacity, 10);
+    }
     return this.eventsService.create(createEventDto);
   }
 

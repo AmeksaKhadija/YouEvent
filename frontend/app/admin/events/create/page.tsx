@@ -13,6 +13,7 @@ export default function CreateEvent() {
     location: '',
     capacity: ''
   });
+  const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const router = useRouter();
@@ -33,13 +34,17 @@ export default function CreateEvent() {
     }
 
     try {
-      // Conversion de la capacité en nombre
-      const payload = {
-          ...formData,
-          capacity: parseInt(formData.capacity)
-      };
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('date', formData.date);
+      formDataToSend.append('location', formData.location);
+      formDataToSend.append('capacity', formData.capacity);
+      if (file) {
+          formDataToSend.append('image', file);
+      }
 
-      await axios.post('http://localhost:8000/events', payload, {
+      await axios.post('http://localhost:8000/events', formDataToSend, {
         headers: {
             Authorization: `Bearer ${token}`
         }
@@ -105,17 +110,16 @@ export default function CreateEvent() {
             </div>
 
             <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="imageUrl">
-                    URL de l'image (optionnel)
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="image">
+                    Image de l'événement (optionnel)
                 </label>
                 <input
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    id="imageUrl"
-                    name="imageUrl"
-                    type="text"
-                    placeholder="https://example.com/image.jpg"
-                    value={formData.imageUrl}
-                    onChange={handleChange}
+                    id="image"
+                    name="image"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
                 />
             </div>
 
