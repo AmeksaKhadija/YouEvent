@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Event, EventStatus } from './event.entity';
@@ -34,6 +34,11 @@ export class EventsService {
 
   async update(id: number, updateEventDto: UpdateEventDto): Promise<Event> {
     const event = await this.findOne(id);
+
+    if (event.status === EventStatus.PUBLISHED) {
+      throw new BadRequestException('Cannot modify a published event');
+    }
+
     this.eventsRepository.merge(event, updateEventDto);
     return this.eventsRepository.save(event);
   }

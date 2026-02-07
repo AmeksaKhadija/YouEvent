@@ -47,6 +47,11 @@ export default function EditEvent() {
                 location: event.location,
                 capacity: event.capacity.toString()
             });
+
+            if (event.status === 'PUBLISHED') {
+                setError('Cet événement est publié et ne peut plus être modifié.');
+            }
+
             setLoading(false);
         } catch (err) {
             console.error(err);
