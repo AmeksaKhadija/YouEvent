@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Reservation } from '../reservations/reservation.entity';
 
 export enum EventStatus {
   DRAFT = 'DRAFT',
@@ -41,4 +42,7 @@ export class Event {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @OneToMany(() => Reservation, (reservation) => reservation.event)
+  reservations: Reservation[];
 }

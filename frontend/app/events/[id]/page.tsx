@@ -2,15 +2,33 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { jwtDecode } from 'jwt-decode';
 
 export default function EventDetail() {
   const params = useParams();
   const id = params?.id;
+  const router = useRouter();
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [reservationLoading, setReservationLoading] = useState(false);
+  const [reservationStatus, setReservationStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState('');
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded: any = jwtDecode(token);
+        setUserRole(decoded.role);
+      } catch (e) {
+        console.error("Invalid token", e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -29,6 +47,42 @@ export default function EventDetail() {
 
     fetchEvent();
   }, [id]);
+
+  const handleReservation = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        // Rediriger vers login si non connecté
+        router.push('/login');
+        return;
+    }
+
+    if (!confirm('Voulez-vous confirmer votre réservation pour cet événement ?')) {
+        return;
+    }
+
+    setReservationLoading(true);
+    setReservationStatus('idle');
+    setMessage('');
+
+    try {
+        await axios.post('http://localhost:8000/reservations', 
+            { eventId: Number(id) },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setReservationStatus('success');
+        setMessage('Votre réservation a été prise en compte avec succès ! (Statut: PENDING)');
+    } catch (err: any) {
+        console.error('Reservation error:', err);
+        setReservationStatus('error');
+        if (err.response && err.response.data && err.response.data.message) {
+            setMessage(`Erreur: ${err.response.data.message}`);
+        } else {
+            setMessage('Une erreur est survenue lors de la réservation.');
+        }
+    } finally {
+        setReservationLoading(false);
+    }
+  };
 
   if (loading) return <div className="text-center py-20 text-xl text-gray-600">Chargement...</div>;
   if (error) return <div className="text-center py-20 text-red-600 font-semibold">{error}</div>;
@@ -59,7 +113,7 @@ export default function EventDetail() {
                     <p className="text-lg text-blue-600 font-medium">{new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
                 <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
-                    <span className="block text-sm text-blue-600 uppercase font-bold tracking-wide">Places restantes</span>
+                    <span className="block text-sm text-blue-600 uppercase font-bold tracking-wide">Places totales</span>
                     <span className="block text-2xl font-bold text-blue-900 text-center">{event.capacity}</span>
                 </div>
             </div>
@@ -68,6 +122,13 @@ export default function EventDetail() {
                 <h3 className="text-xl font-semibold text-gray-900 mb-3">À propos de cet événement</h3>
                 <p className="whitespace-pre-line leading-relaxed">{event.description}</p>
             </div>
+
+            {/* Reservation Message Area */}
+            {message && (
+                <div className={`mb-6 p-4 rounded-lg border ${reservationStatus === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                    {message}
+                </div>
+            )}
 
             <div className="border-t border-gray-100 pt-8">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -79,9 +140,24 @@ export default function EventDetail() {
                         <span className="text-lg font-medium">{event.location}</span>
                     </div>
 
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-4 px-12 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
-                        Réserver ma place
-                    </button>
+                    {userRole === 'participant' ? (
+                        <button 
+                            onClick={handleReservation}
+                            disabled={reservationLoading || event.status !== 'PUBLISHED'}
+                            className={`text-lg font-bold py-4 px-12 rounded-xl shadow-lg transition-all duration-200 transform hover:-translate-y-0.5
+                                ${reservationLoading ? 'bg-gray-400 cursor-not-allowed' : 
+                                event.status !== 'PUBLISHED' ? 'bg-gray-300 cursor-not-allowed text-gray-500' :
+                                'bg-blue-600 hover:bg-blue-700 hover:shadow-xl text-white'}`}
+                        >
+                            {reservationLoading ? 'Traitement...' : 
+                            event.status !== 'PUBLISHED' ? 'Non disponible' :
+                            'Réserver ma place'}
+                        </button>
+                    ) : (
+                        <div className="bg-gray-100 px-6 py-3 rounded-lg text-gray-600 text-sm">
+                            {userRole ? 'Réservation réservée aux participants' : 'Connectez-vous en tant que participant pour réserver'}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -89,3 +165,4 @@ export default function EventDetail() {
     </div>
   );
 }
+
