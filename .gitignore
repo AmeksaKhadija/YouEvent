@@ -7,3 +7,5 @@ build/
 .next/
 frontend/.next/
 backend/dist/
+
+backend/public/uploads
