@@ -9,11 +9,6 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Hide Navbar on Admin Dashboard
-  if (pathname.startsWith('/admin')) {
-    return null;
-  }
-
   useEffect(() => {
     // Check if user is logged in
     const storedUser = localStorage.getItem('user');
@@ -31,6 +26,11 @@ export default function Navbar() {
     router.push('/login');
   };
 
+  // Hide Navbar on Admin Dashboard
+  if (pathname.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <nav className="bg-white shadow-lg">
       <div className="max-w-6xl mx-auto px-4">
@@ -44,11 +44,8 @@ export default function Navbar() {
             <div className="hidden md:flex items-center space-x-1">
               <Link href="/" className="py-4 px-2 text-green-500 border-b-4 border-green-500 font-semibold ">Home</Link>
               <a href="#" className="py-4 px-2 text-gray-500 font-semibold hover:text-green-500 transition duration-300">Events</a>
-              {user && (
+              {user && user.role !== 'admin' && (
                  <Link href="/dashboard" className="py-4 px-2 text-gray-500 font-semibold hover:text-green-500 transition duration-300">Mon Espace</Link>
-              )}
-              {user && user.role === 'admin' && (
-                 <Link href="/admin" className="py-4 px-2 text-red-500 font-semibold hover:text-red-700 transition duration-300">Admin</Link>
               )}
             </div>
           </div>
@@ -56,7 +53,11 @@ export default function Navbar() {
             {user ? (
                <>
                  <span className="py-2 px-2 font-medium text-gray-700 hidden lg:block">Bonjour, {user.name}</span>
-                 <Link href="/dashboard" className="py-2 px-2 font-medium text-white bg-blue-500 rounded hover:bg-blue-400 transition duration-300">Dashboard</Link>
+                 {user.role === 'admin' ? (
+                    <Link href="/admin" className="py-2 px-2 font-medium text-white bg-blue-600 rounded hover:bg-blue-500 transition duration-300">Dashboard</Link>
+                 ) : (
+                    <Link href="/dashboard" className="py-2 px-2 font-medium text-white bg-blue-500 rounded hover:bg-blue-400 transition duration-300">Mon Espace</Link>
+                 )}
                  <button onClick={handleLogout} className="py-2 px-2 font-medium text-white bg-red-500 rounded hover:bg-red-400 transition duration-300">Déconnexion</button>
                </>
             ) : (
