@@ -52,4 +52,11 @@ export class EventsController {
   publish(@Param('id', ParseIntPipe) id: number) {
     return this.eventsService.publish(id);
   }
+
+  @Patch(':id/cancel')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('admin')
+  cancel(@Param('id', ParseIntPipe) id: number) {
+    return this.eventsService.cancel(id);
+  }
 }
