@@ -9,6 +9,7 @@ export default function AdminDashboard() {
   const [authorized, setAuthorized] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -18,6 +19,22 @@ export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null);
   
   const pathname = usePathname();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdownId === null) return;
+      const target = event.target as HTMLElement;
+      if (!target.closest('.dropdown-container')) {
+         setOpenDropdownId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openDropdownId]);
 
   useEffect(() => {
     const initDashboard = async () => {
@@ -100,6 +117,25 @@ export default function AdminDashboard() {
             alert('Erreur lors de la publication');
         }
     }
+  };
+
+  const cancelEvent = async (id: number) => {
+    if (confirm('Voulez-vous vraiment annuler cet événement ?')) {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.patch(`http://localhost:8000/events/${id}/cancel`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setEvents(events.map(e => e.id === id ? { ...e, status: 'CANCELED' } : e));
+        } catch (err) {
+            console.error('Erreur annulation', err);
+            alert('Erreur lors de l\'annulation');
+        }
+    }
+  };
+
+  const toggleDropdown = (id: number) => {
+    setOpenDropdownId(openDropdownId === id ? null : id);
   };
 
   if (loading) return <div className="flex h-screen items-center justify-center">Chargement...</div>;
@@ -225,7 +261,7 @@ export default function AdminDashboard() {
                         </button>
                     </div>
 
-                    <div className="bg-white shadow-md rounded-lg overflow-hidden">
+                    <div className="bg-white shadow-md rounded-lg overflow-visible">
                         {events.length === 0 ? (
                             <div className="p-10 text-center text-gray-500">
                                 Aucun événement trouvé. Cliquez sur "Créer un événement" pour commencer.
@@ -269,35 +305,68 @@ export default function AdminDashboard() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                {event.status !== 'PUBLISHED' && (
+                                                <div className="relative inline-block text-left dropdown-container">
                                                     <button 
-                                                        onClick={() => publishEvent(event.id)}
-                                                        className="text-green-600 hover:text-green-900 mr-4"
+                                                        onClick={() => toggleDropdown(event.id)}
+                                                        className="text-gray-400 hover:text-gray-600 focus:outline-none"
                                                     >
-                                                        Publier
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                                        </svg>
                                                     </button>
-                                                )}
-                                                {event.status === 'PUBLISHED' ? (
-                                                    <span 
-                                                        className="text-gray-400 cursor-not-allowed mr-4" 
-                                                        title="Impossible de modifier un événement publié"
-                                                    >
-                                                        Modifier
-                                                    </span>
-                                                ) : (
-                                                    <button 
-                                                        onClick={() => router.push(`/admin/events/edit/${event.id}`)}
-                                                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                                                    >
-                                                        Modifier
-                                                    </button>
-                                                )}
-                                                <button 
-                                                    onClick={() => deleteEvent(event.id)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                >
-                                                    Supprimer
-                                                </button>
+
+                                                    {openDropdownId === event.id && (
+                                                        <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                                                            <div className="py-1" role="menu" aria-orientation="vertical">
+                                                                {/* Publish option */}
+                                                                {event.status !== 'PUBLISHED' && event.status !== 'CANCELED' && (
+                                                                    <button
+                                                                        onClick={() => { publishEvent(event.id); toggleDropdown(event.id); }}
+                                                                        className="block w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-100"
+                                                                        role="menuitem"
+                                                                    >
+                                                                        Publier
+                                                                    </button>
+                                                                )}
+
+                                                                {/* Edit option */}
+                                                                {event.status === 'PUBLISHED' ? (
+                                                                     <span className="block w-full text-left px-4 py-2 text-sm text-gray-400 cursor-not-allowed">
+                                                                        Modifier
+                                                                     </span>
+                                                                ) : (
+                                                                    <button
+                                                                        onClick={() => router.push(`/admin/events/edit/${event.id}`)}
+                                                                        className="block w-full text-left px-4 py-2 text-sm text-indigo-700 hover:bg-indigo-100"
+                                                                        role="menuitem"
+                                                                    >
+                                                                        Modifier
+                                                                    </button>
+                                                                )}
+
+                                                                {/* Cancel option */}
+                                                                {event.status !== 'CANCELED' && (
+                                                                    <button
+                                                                        onClick={() => { cancelEvent(event.id); toggleDropdown(event.id); }}
+                                                                        className="block w-full text-left px-4 py-2 text-sm text-orange-700 hover:bg-orange-100"
+                                                                        role="menuitem"
+                                                                    >
+                                                                        Annuler
+                                                                    </button>
+                                                                )}
+                                                                
+                                                                {/* Delete option */}
+                                                                <button
+                                                                    onClick={() => { deleteEvent(event.id); toggleDropdown(event.id); }}
+                                                                    className="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-100"
+                                                                    role="menuitem"
+                                                                >
+                                                                    Supprimer
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
