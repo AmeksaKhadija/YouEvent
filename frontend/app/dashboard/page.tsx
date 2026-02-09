@@ -55,6 +55,27 @@ export default function Dashboard() {
     }
   };
 
+  const downloadTicket = async (reservationId: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`http://localhost:8000/reservations/${reservationId}/ticket`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `ticket-${reservationId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Download error', err);
+      alert('Erreur lors du téléchargement du ticket');
+    }
+  };
+
   if (!user) {
     return <div className="text-center mt-10">Chargement...</div>;
   }
@@ -113,7 +134,15 @@ export default function Dashboard() {
                                      </span>
                                 </div>
                             </div>
-                            <div>
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                {reservation.status === 'CONFIRMED' && (
+                                    <button
+                                        onClick={() => downloadTicket(reservation.id)}
+                                        className="bg-green-500 text-white font-bold px-3 py-1 rounded hover:bg-green-600 transition"
+                                    >
+                                        Ticket PDF
+                                    </button>
+                                )}
                                 {(reservation.status === 'PENDING' || reservation.status === 'CONFIRMED') && (
                                     <button 
                                         onClick={() => handleCancelReservation(reservation.id)}

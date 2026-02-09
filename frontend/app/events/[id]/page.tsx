@@ -17,6 +17,7 @@ export default function EventDetail() {
   const [reservationStatus, setReservationStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [alreadyReserved, setAlreadyReserved] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -24,11 +25,25 @@ export default function EventDetail() {
       try {
         const decoded: any = jwtDecode(token);
         setUserRole(decoded.role);
+        checkUserReservation(token);
       } catch (e) {
         console.error("Invalid token", e);
       }
     }
-  }, []);
+  }, [id]);
+
+  const checkUserReservation = async (token: string) => {
+    try {
+        const response = await axios.get('http://localhost:8000/reservations/my-reservations', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const myReservations = response.data;
+        const hasReserved = myReservations.some((r: any) => r.event.id === Number(id) && r.status !== 'CANCELED');
+        setAlreadyReserved(hasReserved);
+    } catch (err) {
+        console.error('Error checking reservations', err);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -143,15 +158,17 @@ export default function EventDetail() {
                     {userRole === 'participant' ? (
                         <button 
                             onClick={handleReservation}
-                            disabled={reservationLoading || event.status !== 'PUBLISHED'}
+                            disabled={reservationLoading || event.status !== 'PUBLISHED' || alreadyReserved || event.capacity <= 0}
                             className={`text-lg font-bold py-4 px-12 rounded-xl shadow-lg transition-all duration-200 transform hover:-translate-y-0.5
-                                ${reservationLoading ? 'bg-gray-400 cursor-not-allowed' : 
-                                event.status !== 'PUBLISHED' ? 'bg-gray-300 cursor-not-allowed text-gray-500' :
+                                ${reservationLoading || event.status !== 'PUBLISHED' || alreadyReserved || event.capacity <= 0 ? 
+                                'bg-gray-400 cursor-not-allowed text-white' : 
                                 'bg-blue-600 hover:bg-blue-700 hover:shadow-xl text-white'}`}
                         >
                             {reservationLoading ? 'Traitement...' : 
-                            event.status !== 'PUBLISHED' ? 'Non disponible' :
-                            'Réserver ma place'}
+                             alreadyReserved ? 'Déjà réservé' :
+                             event.capacity <= 0 ? 'Complet' :
+                             event.status !== 'PUBLISHED' ? 'Non disponible' :
+                             'Réserver ma place'}
                         </button>
                     ) : (
                         <div className="bg-gray-100 px-6 py-3 rounded-lg text-gray-600 text-sm">
