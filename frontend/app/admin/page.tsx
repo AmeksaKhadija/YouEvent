@@ -17,6 +17,11 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [reservations, setReservations] = useState<any[]>([]);
 
+  // States for viewing reservations of a specific event
+  const [viewReservationsEventId, setViewReservationsEventId] = useState<number | null>(null);
+  const [eventReservations, setEventReservations] = useState<any[]>([]);
+  const [loadingEventReservations, setLoadingEventReservations] = useState(false);
+
   useEffect(() => {
     if (activeTab === 'reservations' && authorized) {
         fetchReservations();
@@ -31,6 +36,22 @@ export default function AdminDashboard() {
         });
         setReservations(res.data);
     } catch (err) { console.error(err); }
+  };
+
+  const fetchEventReservations = async (eventId: number) => {
+      setLoadingEventReservations(true);
+      try {
+          const token = localStorage.getItem('token');
+          const res = await axios.get(`http://localhost:8000/reservations/event/${eventId}`, {
+              headers: { Authorization: `Bearer ${token}` }
+          });
+          setEventReservations(res.data);
+      } catch (err) {
+          console.error("Error fetching event reservations:", err);
+          alert("Impossible de récupérer les réservations pour cet événement.");
+      } finally {
+          setLoadingEventReservations(false);
+      }
   };
 
   const updateReservationStatus = async (id: number, status: string) => {
@@ -284,6 +305,62 @@ export default function AdminDashboard() {
             {/* VIEW: EVENTS */}
             {activeTab === 'events' && (
                 <div>
+                  {viewReservationsEventId ? (
+                        <div className="bg-white p-6 rounded-lg shadow-sm">
+                             <div className="flex justify-between items-center mb-6">
+                                <button 
+                                    onClick={() => setViewReservationsEventId(null)}
+                                    className="flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+                                >
+                                    &larr; Retour à la liste des événements
+                                </button>
+                                <h3 className="text-xl font-bold text-gray-800">Réservations (Événement #{viewReservationsEventId})</h3>
+                             </div>
+
+                             {loadingEventReservations ? (
+                                 <div className="flex justify-center p-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div></div>
+                             ) : (
+                                 <div className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-gray-200 border border-gray-100 rounded-lg">
+                                         <thead className="bg-gray-50">
+                                             <tr>
+                                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">ID</th>
+                                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Utilisateur</th>
+                                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Email</th>
+                                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Places</th>
+                                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+                                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Statut</th>
+                                             </tr>
+                                         </thead>
+                                         <tbody className="bg-white divide-y divide-gray-200">
+                                             {eventReservations.length === 0 ? (
+                                                 <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">Aucune réservation pour cet événement.</td></tr>
+                                             ) : (
+                                                 eventReservations.map((res) => (
+                                                     <tr key={res.id} className="hover:bg-gray-50">
+                                                         <td className="px-6 py-4 text-sm text-gray-500">#{res.id}</td>
+                                                         <td className="px-6 py-4 text-sm font-medium text-gray-900">{res.user?.full_name || res.user?.name}</td>
+                                                         <td className="px-6 py-4 text-sm text-gray-500">{res.user?.email}</td>
+                                                         <td className="px-6 py-4 text-sm text-gray-500 font-mono">{res.number_of_tickets}</td>
+                                                         <td className="px-6 py-4 text-sm text-gray-500">{new Date(res.created_at).toLocaleDateString()}</td>
+                                                         <td className="px-6 py-4">
+                                                             <span className={`px-2 py-1 text-xs font-semibold rounded-full 
+                                                                ${(res.status || '').toLowerCase() === 'confirmed' ? 'bg-green-100 text-green-800' : 
+                                                                  (res.status || '').toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                                                  'bg-red-100 text-red-800'}`}>
+                                                                 {res.status}
+                                                             </span>
+                                                         </td>
+                                                     </tr>
+                                                 ))
+                                             )}
+                                         </tbody>
+                                    </table>
+                                 </div>
+                             )}
+                        </div>
+                    ) : (
+                    <>
                     <div className="flex justify-between items-center mb-8">
                         <div>
                             <h2 className="text-3xl font-bold text-gray-800">Gestion des Événements</h2>
@@ -376,6 +453,19 @@ export default function AdminDashboard() {
                                                                         Restaurer
                                                                     </button>
                                                                 )}
+                                                                
+                                                                {/* View Reservations option */}
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setViewReservationsEventId(event.id);
+                                                                        fetchEventReservations(event.id);
+                                                                        toggleDropdown(event.id);
+                                                                    }}
+                                                                    className="block w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-blue-100"
+                                                                    role="menuitem"
+                                                                >
+                                                                    Voir Réservations
+                                                                </button>
 
                                                                 {/* Edit option - Disabled for PUBLISHED events */}
                                                                 {event.status === 'PUBLISHED' ? (
@@ -422,6 +512,8 @@ export default function AdminDashboard() {
                             </table>
                         )}
                     </div>
+                    </>
+                  )}
                 </div>
             )}
 
