@@ -36,6 +36,13 @@ export class ReservationsController {
     return this.reservationsService.findAll();
   }
 
+  @Get('event/:eventId')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('admin')
+  findByEvent(@Param('eventId') eventId: string) {
+    return this.reservationsService.findByEvent(+eventId);
+  }
+
   @Patch(':id/status')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('admin')

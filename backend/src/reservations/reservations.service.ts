@@ -66,6 +66,14 @@ export class ReservationsService {
     });
   }
 
+  async findByEvent(eventId: number): Promise<Reservation[]> {
+    return this.reservationsRepository.find({
+      where: { event_id: eventId },
+      relations: ['user'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
   async findAll(): Promise<Reservation[]> {
     return this.reservationsRepository.find({
       relations: ['event', 'user'],
