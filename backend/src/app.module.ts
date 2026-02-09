@@ -5,8 +5,9 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { EventsModule } from './events/events.module'; // Import EventsModule
-import { ReservationsModule } from './reservations/reservations.module'; // Import ReservationsModule
+import { EventsModule } from './events/events.module';
+import { ReservationsModule } from './reservations/reservations.module';
+import { StatsModule } from './stats/stats.module';
 import { User } from './users/user.entity';
 import { Event } from './events/event.entity'; // Import Event Entity
 import { Reservation } from './reservations/reservation.entity'; // Import Reservation Entity
@@ -29,6 +30,7 @@ import { AppService } from './app.service';
     UsersModule,
     EventsModule, // Add EventsModule
     ReservationsModule,
+    StatsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
