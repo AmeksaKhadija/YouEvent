@@ -53,15 +53,15 @@ export default function EventDetail() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const myReservations = response.data;
-            const isReserved = myReservations.some((res: any) => 
-                res.event.id === Number(id) && 
-                (res.status === 'PENDING' || res.status === 'CONFIRMED')
+            const isReserved = myReservations.some((r: any) => 
+                r.event.id === Number(id) && 
+                (r.status === 'PENDING' || r.status === 'CONFIRMED')
             );
             if (isReserved) {
                 setHasReserved(true);
             }
         } catch (err) {
-            console.error('Error checking reservation status:', err);
+            console.error('Error checking reservations', err);
         }
     };
 

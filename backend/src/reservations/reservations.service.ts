@@ -4,6 +4,7 @@ import { Repository, In } from 'typeorm';
 import { Reservation, ReservationStatus } from './reservation.entity';
 import { Event, EventStatus } from '../events/event.entity';
 import { User } from '../users/user.entity';
+import * as PDFDocument from 'pdfkit';
 
 @Injectable()
 export class ReservationsService {
@@ -94,8 +95,61 @@ export class ReservationsService {
         throw new BadRequestException('Reservation is already canceled');
     }
 
-    // YOUEV-61: Autoriser l'annulation si PENDING ou CONFIRMED
     reservation.status = ReservationStatus.CANCELED;
     await this.reservationsRepository.save(reservation);
+  }
+
+  async generateTicket(userId: number, reservationId: number): Promise<Buffer> {
+    const reservation = await this.reservationsRepository.findOne({
+      where: { id: reservationId, user_id: userId },
+      relations: ['event', 'user'],
+    });
+
+    if (!reservation) {
+      throw new NotFoundException('Reservation not found');
+    }
+
+    // YOUEV-60: Téléchargement uniquement si CONFIRMED
+    if (reservation.status !== ReservationStatus.CONFIRMED) {
+      throw new BadRequestException('Ticket download is only available for confirmed reservations');
+    }
+
+    return new Promise((resolve) => {
+      const doc = new PDFDocument();
+      const buffers: Buffer[] = [];
+
+      doc.on('data', (buffer) => buffers.push(buffer));
+      doc.on('end', () => resolve(Buffer.concat(buffers)));
+
+      // YOUEV-61: PDF contient infos événement + participant
+      // Header
+      doc.fontSize(25).font('Helvetica-Bold').text('TICKET EVENEMENT', { align: 'center' });
+      doc.moveDown();
+      
+      // Event Details
+      doc.fontSize(18).font('Helvetica').fillColor('black').text(`Event: ${reservation.event.title}`);
+      doc.fontSize(14).text(`Date: ${new Date(reservation.event.date).toLocaleDateString()} ${new Date(reservation.event.date).toLocaleTimeString()}`);
+      doc.text(`Location: ${reservation.event.location}`);
+      doc.moveDown();
+      doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke(); // Separator line
+      doc.moveDown();
+
+      // Participant Details
+      doc.fontSize(16).font('Helvetica-Bold').text('Participant Info:');
+      doc.fontSize(14).font('Helvetica').text(`Name: ${reservation.user.name}`);
+      doc.text(`Email: ${reservation.user.email}`);
+      doc.moveDown();
+      doc.moveDown();
+
+      // Status Badge
+      doc.rect(400, 100, 150, 40).fillAndStroke('green', 'black');
+      doc.fillColor('white').fontSize(16).text('CONFIRMED', 425, 112);
+      
+      // Footer
+      doc.fillColor('black').fontSize(10).text(`Ticket ID: #${reservation.id}`, 50, 700);
+      doc.text('This ticket is valid for one person.', 50, 715);
+      
+      doc.end();
+    });
   }
 }
