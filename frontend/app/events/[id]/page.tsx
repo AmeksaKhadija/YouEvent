@@ -14,9 +14,8 @@ export default function EventDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reservationLoading, setReservationLoading] = useState(false);
-  const [reservationStatus, setReservationStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [message, setMessage] = useState('');
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [hasReserved, setHasReserved] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -45,39 +44,54 @@ export default function EventDetail() {
       }
     };
 
+    const checkReservation = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const response = await axios.get('http://localhost:8000/reservations/my-reservations', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const myReservations = response.data;
+            const isReserved = myReservations.some((res: any) => 
+                res.event.id === Number(id) && 
+                (res.status === 'PENDING' || res.status === 'CONFIRMED')
+            );
+            if (isReserved) {
+                setHasReserved(true);
+            }
+        } catch (err) {
+            console.error('Error checking reservation status:', err);
+        }
+    };
+
     fetchEvent();
+    checkReservation();
   }, [id]);
 
   const handleReservation = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        // Rediriger vers login si non connecté
-        router.push('/login');
-        return;
-    }
-
     if (!confirm('Voulez-vous confirmer votre réservation pour cet événement ?')) {
         return;
     }
 
+    const token = localStorage.getItem('token');
+    
     setReservationLoading(true);
-    setReservationStatus('idle');
-    setMessage('');
 
     try {
         await axios.post('http://localhost:8000/reservations', 
             { eventId: Number(id) },
             { headers: { Authorization: `Bearer ${token}` } }
         );
-        setReservationStatus('success');
-        setMessage('Votre réservation a été prise en compte avec succès ! (Statut: PENDING)');
+        alert('Votre réservation a été prise en compte avec succès ! (Statut: PENDING)');
+        setEvent((prev: any) => ({ ...prev, capacity: prev.capacity - 1 }));
+        setHasReserved(true);
     } catch (err: any) {
         console.error('Reservation error:', err);
-        setReservationStatus('error');
         if (err.response && err.response.data && err.response.data.message) {
-            setMessage(`Erreur: ${err.response.data.message}`);
+             alert(`Erreur: ${err.response.data.message}`);
         } else {
-            setMessage('Une erreur est survenue lors de la réservation.');
+             alert('Une erreur est survenue lors de la réservation.');
         }
     } finally {
         setReservationLoading(false);
@@ -113,8 +127,10 @@ export default function EventDetail() {
                     <p className="text-lg text-blue-600 font-medium">{new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
                 <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
-                    <span className="block text-sm text-blue-600 uppercase font-bold tracking-wide">Places totales</span>
-                    <span className="block text-2xl font-bold text-blue-900 text-center">{event.capacity}</span>
+                    <span className="block text-sm text-blue-600 uppercase font-bold tracking-wide">Places disponibles</span>
+                    <span className="block text-2xl font-bold text-blue-900 text-center">
+                        {event.capacity > 0 ? event.capacity : 'Pas de place'}
+                    </span>
                 </div>
             </div>
 
@@ -124,12 +140,6 @@ export default function EventDetail() {
             </div>
 
             {/* Reservation Message Area */}
-            {message && (
-                <div className={`mb-6 p-4 rounded-lg border ${reservationStatus === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-                    {message}
-                </div>
-            )}
-
             <div className="border-t border-gray-100 pt-8">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-3 text-gray-700">
@@ -143,14 +153,18 @@ export default function EventDetail() {
                     {userRole === 'participant' ? (
                         <button 
                             onClick={handleReservation}
-                            disabled={reservationLoading || event.status !== 'PUBLISHED'}
+                            disabled={reservationLoading || event.status !== 'PUBLISHED' || event.capacity <= 0 || hasReserved}
                             className={`text-lg font-bold py-4 px-12 rounded-xl shadow-lg transition-all duration-200 transform hover:-translate-y-0.5
                                 ${reservationLoading ? 'bg-gray-400 cursor-not-allowed' : 
                                 event.status !== 'PUBLISHED' ? 'bg-gray-300 cursor-not-allowed text-gray-500' :
+                                hasReserved ? 'bg-green-600 cursor-not-allowed text-white' :
+                                event.capacity <= 0 ? 'bg-red-500 cursor-not-allowed text-white' :
                                 'bg-blue-600 hover:bg-blue-700 hover:shadow-xl text-white'}`}
                         >
                             {reservationLoading ? 'Traitement...' : 
                             event.status !== 'PUBLISHED' ? 'Non disponible' :
+                            hasReserved ? 'Déjà réservé' :
+                            event.capacity <= 0 ? 'pas de place' :
                             'Réserver ma place'}
                         </button>
                     ) : (

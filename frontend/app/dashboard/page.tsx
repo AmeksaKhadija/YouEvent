@@ -116,7 +116,7 @@ export default function Dashboard() {
                             <div>
                                 {(reservation.status === 'PENDING' || reservation.status === 'CONFIRMED') && (
                                     <button 
-                                        onClick={() => handleCancelReservation(reservation.id)}
+                                        onClick={() => initCancelReservation(reservation.id)}
                                         className="text-red-600 hover:text-red-900 font-bold px-3 py-1 border border-red-200 rounded hover:bg-red-50 transition"
                                     >
                                         Annuler

@@ -53,7 +53,22 @@ export class EventsController {
   @Put(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('admin')
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateEventDto: UpdateEventDto) {
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './public/uploads',
+      filename: (req, file, cb) => {
+        const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+        cb(null, `${randomName}${extname(file.originalname)}`);
+      }
+    })
+  }))
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateEventDto: UpdateEventDto, @UploadedFile() file: Express.Multer.File) {
+    if (file) {
+      updateEventDto.imageUrl = `http://localhost:8000/uploads/${file.filename}`;
+    }
+    if (updateEventDto.capacity && typeof updateEventDto.capacity === 'string') {
+      updateEventDto.capacity = parseInt(updateEventDto.capacity, 10);
+    }
     return this.eventsService.update(id, updateEventDto);
   }
 

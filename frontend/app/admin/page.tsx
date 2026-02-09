@@ -100,8 +100,7 @@ export default function AdminDashboard() {
                 router.push('/login');
             } else if (err.response.status === 403) {
                 // Accès interdit (Rôle insuffisant)
-                alert("Accès refusé. Vous n'avez pas les droits d'administrateur.");
-                router.push('/');
+                showModal('Accès refusé', "Vous n'avez pas les droits d'administrateur.", 'error', () => router.push('/'));
             }
         }
       } finally {
@@ -487,7 +486,7 @@ export default function AdminDashboard() {
                      <h2 className="text-3xl font-bold text-gray-800 mb-8">Mon Profil</h2>
                      <div className="bg-white shadow rounded-lg p-6 max-w-2xl">
                         {user ? (
-                           <form onSubmit={(e) => { e.preventDefault(); alert('Fonctionnalité en cours de développement'); }}>
+                           <form onSubmit={(e) => { e.preventDefault(); showModal('Info', 'Fonctionnalité en cours de développement', 'info'); }}>
                                <div className="mb-4">
                                    <label className="block text-gray-700 text-sm font-bold mb-2">Nom Complet</label>
                                    <input type="text" defaultValue={user.name} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />

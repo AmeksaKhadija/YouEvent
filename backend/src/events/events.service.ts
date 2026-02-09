@@ -13,6 +13,9 @@ export class EventsService {
   ) {}
 
   async create(createEventDto: CreateEventDto): Promise<Event> {
+    if (new Date(createEventDto.date) < new Date()) {
+      throw new BadRequestException('Event date cannot be in the past');
+    }
     const event = this.eventsRepository.create({
       ...createEventDto,
       status: EventStatus.DRAFT, // YOUEV-38: Statut initial DRAFT

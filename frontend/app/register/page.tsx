@@ -21,8 +21,7 @@ export default function Register() {
     e.preventDefault();
     try {
       // Assuming Backend runs on port 8000
-      const response = await axios.post('http://localhost:8000/auth/register', formData);
-      console.log(response.data);
+      await axios.post('http://localhost:8000/auth/register', formData);
       alert('Inscription réussie !');
       router.push('/');
     } catch (err: any) {
@@ -33,7 +32,7 @@ export default function Register() {
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
-        <div>
+      <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Créer un compte
           </h2>
