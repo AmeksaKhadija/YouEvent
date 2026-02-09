@@ -16,6 +16,7 @@ export default function AdminDashboard() {
   const initialTab = searchParams.get('tab') || 'dashboard';
   const [activeTab, setActiveTab] = useState(initialTab);
   const [reservations, setReservations] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
 
   // States for viewing reservations of a specific event
   const [viewReservationsEventId, setViewReservationsEventId] = useState<number | null>(null);
@@ -110,6 +111,16 @@ export default function AdminDashboard() {
         // 2. Fetch Events
         const eventsResponse = await axios.get('http://localhost:8000/events');
         setEvents(eventsResponse.data);
+
+        // 3. Fetch Stats
+        try {
+            const statsRes = await axios.get('http://localhost:8000/stats/dashboard', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setStats(statsRes.data);
+        } catch (sErr) {
+            console.error("Failed to fetch stats", sErr);
+        }
 
       } catch (err: any) {
         console.error(err);
@@ -254,50 +265,59 @@ export default function AdminDashboard() {
             {activeTab === 'dashboard' && (
                 <div>
                      <h2 className="text-3xl font-bold text-gray-800 mb-8">Tableau de Bord</h2>
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        {/* Stat Card 1 */}
+                     
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                        {/* Users Stats */}
+                        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-indigo-500">
+                             <div className="flex items-center">
+                                <div className="p-3 rounded-full bg-indigo-100 text-indigo-500 mr-4">
+                                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                </div>
+                                <div>
+                                    <p className="text-gray-500 text-sm font-medium uppercase">Utilisateurs</p>
+                                    <p className="text-2xl font-bold text-gray-900">{stats ? stats.totalUsers : '-'}</p>
+                                </div>
+                             </div>
+                        </div>
+
+                        {/* Events Stats */}
                         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
                             <div className="flex items-center">
                                 <div className="p-3 rounded-full bg-blue-100 text-blue-500 mr-4">
                                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                                 </div>
                                 <div>
-                                    <p className="text-gray-500 text-sm font-medium uppercase">Total Événements</p>
-                                    <p className="text-2xl font-bold text-gray-900">{events.length}</p>
+                                    <p className="text-gray-500 text-sm font-medium uppercase">Événements</p>
+                                    <p className="text-2xl font-bold text-gray-900">{stats ? stats.totalEvents : '-'}</p>
+                                    <p className="text-xs text-green-600 font-semibold">{stats ? stats.publishedEvents : 0} Publiés</p>
                                 </div>
                             </div>
                         </div>
                         
-                         {/* Stat Card 2 */}
-                         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+                        {/* Reservations Stats */}
+                         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-teal-500">
                              <div className="flex items-center">
-                                <div className="p-3 rounded-full bg-green-100 text-green-500 mr-4">
-                                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                <div className="p-3 rounded-full bg-teal-100 text-teal-500 mr-4">
+                                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
                                 </div>
                                 <div>
-                                    <p className="text-gray-500 text-sm font-medium uppercase">Événements Publiés</p>
-                                    <p className="text-2xl font-bold text-gray-900">{events.filter(e => e.status === 'PUBLISHED').length}</p>
-                                </div>
-                             </div>
-                        </div>
-
-                         {/* Stat Card 3 */}
-                         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
-                             <div className="flex items-center">
-                                <div className="p-3 rounded-full bg-yellow-100 text-yellow-500 mr-4">
-                                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                </div>
-                                <div>
-                                    <p className="text-gray-500 text-sm font-medium uppercase">En Attente</p>
-                                    <p className="text-2xl font-bold text-gray-900">{events.filter(e => e.status === 'DRAFT' || !e.status).length}</p>
+                                    <p className="text-gray-500 text-sm font-medium uppercase">Réservations</p>
+                                    <p className="text-2xl font-bold text-gray-900">{stats ? stats.totalReservations : '-'}</p>
+                                    <div className="flex space-x-2 text-xs font-semibold">
+                                        <span className="text-green-600">{stats ? stats.confirmedReservations : 0} Confirmées</span>
+                                        <span className="text-yellow-600">{stats ? stats.pendingReservations : 0} En attente</span>
+                                    </div>
                                 </div>
                              </div>
                         </div>
                      </div>
                      
                      <div className="bg-white shadow rounded-lg p-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Activité Récente</h3>
-                        <p className="text-gray-500">Aucune activité récente à afficher pour le moment.</p>
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Aperçu rapide</h3>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2 mt-4">
+                            <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: stats && stats.totalEvents > 0 ? `${(stats.publishedEvents / stats.totalEvents) * 100}%` : '0%' }}></div>
+                        </div>
+                        <p className="text-xs text-gray-500 text-right">Taux de publication des événements ({stats ? Math.round((stats.publishedEvents / stats.totalEvents) * 100) : 0}%)</p>
                      </div>
                 </div>
             )}
