@@ -13,6 +13,7 @@ export default function EditEvent() {
     location: '',
     capacity: ''
   });
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -67,6 +68,12 @@ export default function EditEvent() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -75,14 +82,20 @@ export default function EditEvent() {
     const token = localStorage.getItem('token');
 
     try {
-      const payload = {
-          ...formData,
-          capacity: parseInt(formData.capacity)
-      };
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('date', formData.date);
+      formDataToSend.append('location', formData.location);
+      formDataToSend.append('capacity', formData.capacity);
+      if (file) {
+        formDataToSend.append('image', file);
+      }
 
-      await axios.put(`http://localhost:8000/events/${id}`, payload, {
+      await axios.put(`http://localhost:8000/events/${id}`, formDataToSend, {
         headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
         }
       });
 
@@ -150,16 +163,27 @@ export default function EditEvent() {
             </div>
 
             <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="imageUrl">
-                    URL de l'image (optionnel)
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                    Image actuelle
+                </label>
+                {formData.imageUrl && (
+                    <div className="mb-2">
+                         <img src={formData.imageUrl} alt="Current" className="h-32 object-cover rounded" />
+                    </div>
+                )}
+            </div>
+
+            <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="image">
+                    Changer l'image
                 </label>
                 <input
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    id="imageUrl"
-                    name="imageUrl"
-                    type="text"
-                    value={formData.imageUrl}
-                    onChange={handleChange}
+                    id="image"
+                    name="image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
                 />
             </div>
 

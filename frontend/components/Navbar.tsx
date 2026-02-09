@@ -44,9 +44,6 @@ export default function Navbar() {
             <div className="hidden md:flex items-center space-x-1">
               <Link href="/" className="py-4 px-2 text-green-500 border-b-4 border-green-500 font-semibold ">Home</Link>
               <a href="#" className="py-4 px-2 text-gray-500 font-semibold hover:text-green-500 transition duration-300">Events</a>
-              {user && user.role !== 'admin' && (
-                 <Link href="/dashboard" className="py-4 px-2 text-gray-500 font-semibold hover:text-green-500 transition duration-300">Mon Espace</Link>
-              )}
             </div>
           </div>
           <div className="hidden md:flex items-center space-x-3 ">

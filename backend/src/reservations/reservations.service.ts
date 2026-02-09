@@ -40,21 +40,12 @@ export class ReservationsService {
     }
 
     // YOUEV-53: Vérifier places disponibles
-    const reservationsCount = await this.reservationsRepository.count({
-      where: {
-        event_id: eventId,
-        status: In([ReservationStatus.PENDING, ReservationStatus.CONFIRMED]),
-      },
-    });
-
-    if (reservationsCount >= event.capacity) {
-      throw new BadRequestException('Event is fully booked');
+    if (event.capacity <= 0) {
+      throw new BadRequestException('pas de place');
     }
 
-    // Decrement event capacity (as requested by user)
-    // Note: capacity represents "available seats" in this context as per request
-    event.capacity = event.capacity - 1;
-    await this.eventsRepository.save(event);
+    // Decrement places using atomic update
+    await this.eventsRepository.decrement({ id: eventId }, 'capacity', 1);
 
     // YOUEV-54: Statut réservation DRAFT (PENDING)
     const reservation = this.reservationsRepository.create({
